@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mobility Program</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f1923; color: #eee; min-height: 100vh; }
+  .app { max-width: 700px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.1rem; color: #7eb8f7; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  .subtitle { font-size: 0.78rem; color: #556677; margin-bottom: 20px; }
+
+  .routine-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab { flex: 1; min-width: 130px; padding: 10px 8px; border-radius: 10px; border: 2px solid transparent; cursor: pointer;
+    background: #1a2533; text-align: center; transition: all 0.2s; }
+  .tab:hover { border-color: #7eb8f7; }
+  .tab.active { border-color: var(--rc); background: #1e3050; }
+  .tab-icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+  .tab-name { font-size: 0.76rem; font-weight: 700; color: #cde; }
+  .tab-meta { font-size: 0.65rem; color: #7eb8f7; margin-top: 2px; }
+
+  .exercise-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 20px; }
+  .ex-item { display: flex; align-items: center; gap: 11px; padding: 9px 13px; background: #1a2533;
+    border-radius: 10px; border: 2px solid transparent; cursor: pointer; transition: all 0.18s; }
+  .ex-item.active { border-color: var(--rc); background: #1e3050; }
+  .ex-item.done { opacity: 0.38; }
+  .ex-num { font-size: 0.68rem; color: #556677; min-width: 20px; font-weight: 700; }
+  .ex-info { flex: 1; }
+  .ex-name { font-size: 0.85rem; font-weight: 700; color: #eee; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .badge { font-size: 0.58rem; padding: 1px 5px; border-radius: 4px; font-weight: 700; letter-spacing: .5px; }
+  .badge-flow { background: #1a3a2a; color: #6ecf8e; border: 1px solid #2a5a3a; }
+  .badge-rehab { background: #3a2010; color: #f0a060; border: 1px solid #5a3010; }
+  .badge-yt { background: #1a2a3a; color: #7eb8f7; border: 1px solid #2a4a6a; }
+  .ex-detail { font-size: 0.7rem; color: #7eb8f7; margin-top: 2px; }
+  .ex-dur { font-size: 0.72rem; color: #445566; min-width: 46px; text-align: right; }
+
+  .timer-panel { background: #1a2533; border-radius: 14px; padding: 20px; border: 2px solid #1e3a5f; }
+  .t-label { font-size: 0.65rem; letter-spacing: 2px; color: #445566; text-transform: uppercase; margin-bottom: 5px; }
+  .t-name { font-size: 1.15rem; font-weight: 700; color: #eee; margin-bottom: 10px; line-height: 1.25; }
+  .t-cue { font-size: 0.78rem; color: #a0c4ff; line-height: 1.55; margin-bottom: 12px; }
+  .t-focus { font-size: 0.7rem; color: #6ecf8e; background: #0d2018; border-radius: 5px; padding: 5px 9px; margin-bottom: 10px; }
+  .t-injury { font-size: 0.7rem; color: #f0a060; background: #2a1a0a; border-radius: 5px; padding: 5px 9px; margin-bottom: 12px; }
+
+  .t-circle-wrap { display: flex; justify-content: center; margin-bottom: 16px; }
+  .t-circle { position: relative; width: 128px; height: 128px; }
+  .t-circle svg { position: absolute; top:0; left:0; transform: rotate(-90deg); }
+  .tc-bg { fill:none; stroke:#1e3a5f; stroke-width:8; }
+  .tc-fg { fill:none; stroke-width:8; stroke-linecap:round; transition: stroke-dashoffset 0.85s linear; }
+  .t-text { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; }
+  .t-secs { font-size: 2.1rem; font-weight:700; color:#eee; line-height:1; }
+  .t-side { font-size: 0.62rem; color: #7eb8f7; margin-top: 3px; letter-spacing: 1px; }
+
+  .t-ctrls { display:flex; gap:9px; justify-content:center; flex-wrap:wrap; }
+  .btn { padding:10px 20px; border-radius:8px; border:none; cursor:pointer; font-size:0.83rem; font-weight:700; transition:all 0.15s; }
+  .btn-go { background:#7eb8f7; color:#0f1923; }
+  .btn-go:hover { background:#a0ccff; }
+  .btn-back { background:#1e3050; color:#7eb8f7; border:1px solid #7eb8f7; }
+  .btn-back:hover { background:#1e4070; }
+  .btn-skip { background:#222f3a; color:#667; }
+  .btn-skip:hover { background:#2a3a4a; color:#99a; }
+
+  .prog-wrap { margin-bottom: 14px; }
+  .prog-bg { background:#1e3a5f; border-radius:4px; height:5px; }
+  .prog-fg { border-radius:4px; height:5px; transition:width 0.3s; }
+  .prog-lbl { font-size:0.65rem; color:#445566; margin-top:4px; }
+
+  .done-banner { text-align:center; padding:28px 20px; }
+  .done-banner .big { font-size:2.4rem; margin-bottom:8px; }
+  .done-banner h2 { color:#7eb8f7; margin-bottom:6px; }
+
+  @media (max-width: 440px) {
+    .routine-tabs { flex-direction: column; }
+    .tab { min-width: unset; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Mobility Program</h1>
+  <p class="subtitle">Ice Hockey + Soccer · Injury-aware · Flow-based</p>
+  <div class="routine-tabs" id="tabs"></div>
+  <div class="prog-wrap">
+    <div class="prog-bg"><div class="prog-fg" id="prog" style="width:0%"></div></div>
+    <div class="prog-lbl" id="prog-lbl">Select a routine to begin</div>
+  </div>
+  <div class="exercise-list" id="exList"></div>
+  <div class="timer-panel" id="timerPanel"></div>
+</div>
+
+<!-- Fullscreen overlay -->
+<div id="fs-panel" style="display:none; position:fixed; inset:0; background:#0f1923; z-index:9999;
+  flex-direction:column; align-items:center; justify-content:center; padding:24px; overflow-y:auto;">
+  <div id="fs-inner" style="max-width:600px; width:100%;"></div>
+</div>
+
+<script>
+// badge types: "flow" = multi-joint flow move, "yt" = from your YouTube video, "rehab" = injury rehab, null = standard
+const R = [
+  {
+    id:"morning", icon:"🌅", name:"Morning Activation", meta:"~11 min · Athletic prep", color:"#7eb8f7",
+    exercises:[
+      {
+        name:"Deep Squat Hold + Pry", dur:50, detail:"50s — pry knees out, breathe deep", sides:null, badge:null,
+        focus:"Ankles · Hips · Thoracic spine",
+        cue:"Feet shoulder-width, sink as deep as you can. Place elbows inside knees and push them wide. Breathe into your belly — try to sink a fraction deeper with each exhale. This sets your range for the whole day.",
+        injury:null
+      },
+      {
+        name:"Half Kneeling Hip Opener", dur:50, detail:"25s each side", sides:"L/R", badge:"yt",
+        focus:"Hip flexor · Hip external rotation · Thoracic",
+        cue:"Half-kneeling, front foot flat. Rotate your torso toward the front knee, opening your chest. Drive the front knee outward. Feel the deep stretch at the front and inside of the rear hip. Slow and controlled.",
+        injury:null
+      },
+      {
+        name:"Half Kneeling Reach to Internal Rotation", dur:50, detail:"25s each side", sides:"L/R", badge:"yt",
+        focus:"Thoracic rotation · Shoulder · Hip IR",
+        cue:"Half-kneeling. Reach one arm toward the ceiling while rotating the torso, then bring that arm across and down into internal rotation — threading the needle through the armpit. Feel the shoulder blade glide and the thoracic spine unwind.",
+        injury:"🔶 Left shoulder: Only go as far as pain-free. Reduce range if any pinching."
+      },
+      {
+        name:"Half Kneeling Rock + Bow", dur:50, detail:"25s each side", sides:"L/R", badge:"yt",
+        focus:"Hip flexor · Glute · Lumbar decompression",
+        cue:"Half-kneeling. Rock your hips forward (hip flexor stretch), then bow forward, hinging at the hip and reaching arms long — glute and lower back open up. Rock between these two end ranges fluidly. Breathe at each end.",
+        injury:null
+      },
+      {
+        name:"Child's Pose with Rotation", dur:50, detail:"25s each side", sides:"L/R", badge:"yt",
+        focus:"Thoracic rotation · Lats · Shoulder",
+        cue:"Start in child's pose, arms extended. Thread one arm under your body as far as you can, pressing the shoulder toward the floor. Hold 2s, return. Feel the thoracic spine rotate and the lat stretch open.",
+        injury:"🔶 Left shoulder: Let the shoulder sink passively — don't force it down."
+      },
+      {
+        name:"Cat-Cow Alt. Reach", dur:50, detail:"8 reps each side", sides:null, badge:"yt",
+        focus:"Thoracic · Scapula · Opposite hip",
+        cue:"On all fours. As you exhale into cat (spine rounds up), reach one arm long under your body. As you inhale into cow (spine dips), extend that arm up toward the ceiling. Opposite hip stays square. Full spinal wave with a reach.",
+        injury:null
+      },
+      {
+        name:"Cat-Cow Wave", dur:40, detail:"10 slow reps", sides:null, badge:"yt",
+        focus:"Full spine · Segmental control",
+        cue:"On all fours. Start the movement at the tailbone and let it ripple up vertebra by vertebra through the whole spine to the neck — like a wave. Reverse it back down. This is about segmental control, not just arching and rounding.",
+        injury:null
+      },
+      {
+        name:"World's Greatest Stretch", dur:50, detail:"5 reps each side", sides:"L/R", badge:"flow",
+        focus:"Hip flexor · Thoracic rotation · Hamstring",
+        cue:"Step into a deep lunge, plant the same-side hand on the floor. Rotate the top arm all the way to the ceiling, hold 2s, bring it down. Then straighten the front leg and hinge for a hamstring hit. Three joints, one flow.",
+        injury:null
+      },
+      {
+        name:"90/90 Switch", dur:50, detail:"50s — flow between sides", sides:null, badge:"yt",
+        focus:"Hip IR + ER · Pelvic control",
+        cue:"Sit with one shin in front, one behind. Tall spine, drive the back hip toward the floor. Switch sides with control — lift and transition slowly, don't let the hips collapse. Feel both hip internal and external rotation.",
+        injury:null
+      },
+      {
+        name:"90/90 Sit, Lean + Extension", dur:50, detail:"25s each side", sides:"L/R", badge:"yt",
+        focus:"Hip flexor · Quad · Thoracic extension",
+        cue:"From 90/90, lean back over the rear shin, supporting yourself with hands. Then extend — reach the arm opposite the front leg overhead, opening the thoracic spine into extension. Hip flexor and quad of the rear leg get a deep hit.",
+        injury:null
+      },
+      {
+        name:"Ankle CARs", dur:50, detail:"5 circles each direction, each ankle", sides:"L/R", badge:null,
+        focus:"Ankle · Subtalar joint",
+        cue:"Standing on one leg. Draw the biggest possible circle with your foot — push into end range in every direction. Slow and deliberate. Think about separating each direction: up, out, down, in.",
+        injury:"🔶 Left ankle: Push a little further into dorsiflexion each morning. This is how you rebuild range post-surgery."
+      },
+      {
+        name:"Wobble Board Single-Leg Balance", dur:50, detail:"25s each leg — eyes open, then close", sides:"L/R", badge:null,
+        focus:"Ankle proprioception · Hip stabilisers · Reactive balance",
+        cue:"Stand on one leg on the wobble board. First 15s: eyes open, find your balance and try to keep the board edges off the floor. Last 15s: close your eyes — this forces your ankle and hip to do all the work with no visual reference. Start small tilts, grow the range as you get stable.",
+        injury:"🔶 Left ankle: This is your most important balance exercise post-surgery. Proprioception is often the last thing to return after ankle surgery — this rebuilds it. Progress slowly. If it feels very unstable, stand near a wall first."
+      },
+      {
+        name:"Wobble Board Single-Leg Reach", dur:50, detail:"5 reaches each direction, each leg", sides:"L/R", badge:"flow",
+        focus:"Ankle stability · Hip control · Dynamic proprioception",
+        cue:"Stand on one leg on the wobble board. Slowly reach the free leg forward, then out to the side, then behind you — like a slow star pattern — while staying balanced on the board. This mimics the reactive demands of skating edges and soccer plant-and-cut. Keep a slight bend in the standing knee throughout.",
+        injury:"🔶 Left ankle: Go slower on this side. If balance breaks completely, reset and restart — don't try to save it with a big correction, as that can stress the ankle."
+      },
+      {
+        name:"Band Pull-Apart", dur:40, detail:"15 reps", sides:null, badge:"rehab",
+        focus:"Posterior cuff · Mid-traps · Scapular retraction",
+        cue:"Arms straight in front, light band. Pull apart to a T, squeeze and hold 1s, return slowly. Shoulders stay down throughout. Activates the posterior rotator cuff before your day.",
+        injury:"🔶 Left shoulder: Reduce range if any pinching. Light band only."
+      }
+    ]
+  },
+  {
+    id:"evening", icon:"🌙", name:"Evening Recovery", meta:"~14 min · Legs + loosen", color:"#a78bfa",
+    exercises:[
+      {
+        name:"Legs Up the Wall", dur:90, detail:"90s", sides:null, badge:null,
+        focus:"Venous drainage · Nervous system downshift",
+        cue:"Lie on your back, legs straight up a wall, arms relaxed. Breathe slowly. Gravity passively drains the legs after sport. Your transition from athlete to recovery mode — let the day go.",
+        injury:null
+      },
+      {
+        name:"Supine Figure-4 Flow", dur:50, detail:"25s each side", sides:"L/R", badge:"flow",
+        focus:"Glute · Hip ER · IT band",
+        cue:"Lie on back, cross one ankle over the opposite knee. Pull the bottom leg toward you. Then slowly rotate the figure-4 left and right, letting the outside hip open. A passive pigeon with movement — better than holding still.",
+        injury:null
+      },
+      {
+        name:"Half Kneeling Hip Flexor + Reach", dur:50, detail:"25s each side", sides:"L/R", badge:"flow",
+        focus:"Hip flexor · Quad · Thoracic",
+        cue:"Half-kneeling, rear knee down. Drive hips forward into the hip flexor stretch, then add a reach overhead with the arm on the same side as the rear knee — opens the thoracic and deepens the hip flexor hit. Breathe into the stretch.",
+        injury:null
+      },
+      {
+        name:"Deep Adductor Side Lunge", dur:50, detail:"25s each side", sides:"L/R", badge:null,
+        focus:"Groin · Adductors · Hip abduction",
+        cue:"Wide stance, shift weight to one side into a deep side lunge. Other leg fully extended. Rock gently to find the tight spots in the groin. Critical stretch for skating crossovers and soccer cutting.",
+        injury:null
+      },
+      {
+        name:"Standing Hamstring Hinge", dur:50, detail:"25s each side", sides:"L/R", badge:null,
+        focus:"Hamstring · Proximal glute · Calf",
+        cue:"One foot elevated on a step or chair. Flex the foot toward you. Hinge forward from the hip — not rounding the back — until you feel the full hamstring pull. Add a slight foot flex to add calf. Key for both sports.",
+        injury:null
+      },
+      {
+        name:"Pigeon Pose", dur:80, detail:"80s each side", sides:"L/R", badge:null,
+        focus:"Glute · Hip ER · Piriformis",
+        cue:"Front shin angled across the mat, sink hips toward the floor. Prop on forearms or go fully flat. Breathe and let gravity do the work. This is your deepest glute release — don't rush it.",
+        injury:null
+      },
+      {
+        name:"Half Kneeling Ankle + Rock", dur:50, detail:"25s each side", sides:"L/R", badge:null,
+        focus:"Ankle dorsiflexion · Soleus",
+        cue:"Front foot flat, drive knee over the pinky toe without the heel leaving the floor. Rock forward gently to load the ankle. Find the tight spots and breathe into them.",
+        injury:"🔶 Left ankle: Spend an extra 15s here compared to your right. Never force end range."
+      },
+      {
+        name:"Quad + IT Band Foam Roll", dur:50, detail:"25s each leg", sides:"L/R", badge:null,
+        focus:"Quad · IT band · Fascial release",
+        cue:"Roll slowly from hip to just above the knee. Pause 5s on any tender spots and breathe into them. Then angle slightly outward to work the IT band.",
+        injury:"🔶 Right knee: Extra time on the right quad — tight quads load the patella. Never roll directly on the knee joint."
+      },
+      {
+        name:"Calf + Achilles Release", dur:50, detail:"25s each side", sides:"L/R", badge:null,
+        focus:"Gastrocnemius · Soleus · Achilles",
+        cue:"Foam roll or cross-friction the calf from below the knee to above the ankle. Flex and point your foot 5 times on each tender spot.",
+        injury:"🔶 Left ankle: Also work just above the ankle joint — scar tissue from surgeries can restrict range over time."
+      },
+      {
+        name:"Thoracic Extension over Roller", dur:50, detail:"4–5 segments, 10s each", sides:null, badge:"flow",
+        focus:"Thoracic extension · Rib cage · Counter to skating posture",
+        cue:"Place foam roller across the mid-back. Support your head. Extend back over the roller and breathe in — let the segment open. Move it up one segment at a time from lower to upper thoracic. Directly undoes the hunched skating position.",
+        injury:null
+      },
+      {
+        name:"Sleeper Stretch", dur:50, detail:"3 × 30s — LEFT shoulder only", sides:null, badge:"rehab",
+        focus:"Posterior shoulder capsule · Rotator cuff",
+        cue:"Lie on left side, arm at shoulder height. Use right hand to gently push the left wrist toward the floor. Feel the stretch in the back of the shoulder. Slow, never forced.",
+        injury:"🔶 Left shoulder only. Mild discomfort is ok. Sharp pain = stop. Do NOT do on right side."
+      },
+      {
+        name:"Diaphragmatic Breathing", dur:50, detail:"10 slow breaths", sides:null, badge:null,
+        focus:"Nervous system · Diaphragm · Recovery",
+        cue:"On your back, hand on belly. Breathe so only the belly rises. 4 counts in through the nose, 6 counts out through the mouth. Activates the parasympathetic nervous system. End here.",
+        injury:null
+      }
+    ]
+  },
+  {
+    id:"rehab", icon:"🎯", name:"Shoulder & Knee", meta:"8–10 min · Targeted rehab", color:"#f0a060",
+    exercises:[
+      {
+        name:"Pendulum Swings", dur:50, detail:"Left shoulder — grow circles gradually", sides:null, badge:"rehab",
+        focus:"Shoulder joint decompression · Rotator cuff offload",
+        cue:"Lean forward with right hand on a table. Let left arm hang completely loose. Use momentum — not muscle — to make small clockwise circles, then counter-clockwise. Decompresses the joint space.",
+        injury:"🔶 Left shoulder only. Zero muscular effort. Gravity does the work."
+      },
+      {
+        name:"Band External Rotation", dur:50, detail:"3 × 12 reps — LEFT side only", sides:null, badge:"rehab",
+        focus:"Infraspinatus · Teres minor · Posterior cuff",
+        cue:"Elbow bent 90°, tucked into side, light band. Rotate forearm outward slowly (2s out, 2s back). This directly strengthens the muscles causing your throwing and pressing pain.",
+        injury:"🔶 LIGHT band only. You should feel it working, not straining. Most important shoulder move you do."
+      },
+      {
+        name:"Wall Slide", dur:50, detail:"2 × 10 reps", sides:null, badge:"rehab",
+        focus:"Scapular upward rotation · Serratus anterior",
+        cue:"Back against wall, arms in a W. Slide arms up to a Y and back. Every part of both arms stays in contact with wall the whole time. Trains the scapula to move correctly overhead.",
+        injury:"🔶 Left shoulder: Only go as high as completely pain-free."
+      },
+      {
+        name:"Doorway Pec Stretch", dur:50, detail:"2 × 30s", sides:null, badge:null,
+        focus:"Pectoralis minor · Anterior capsule",
+        cue:"Forearms on a doorframe, step one foot through. Tight pecs pull the shoulder forward and worsen impingement. This directly undoes that pattern. Steady hold, no bouncing.",
+        injury:null
+      },
+      {
+        name:"Thread the Needle", dur:50, detail:"8 reps each side", sides:"L/R", badge:"flow",
+        focus:"Thoracic rotation · Posterior shoulder · Rhomboids",
+        cue:"On all fours. Thread one arm under your body along the floor as far as it goes, letting the shoulder drop. Return and reach that arm to the ceiling. Flow between these two end ranges. Thoracic spine and shoulder blade work together.",
+        injury:"🔶 Left shoulder: Let it drop passively on the threading phase — don't force the shoulder down."
+      },
+      {
+        name:"Terminal Knee Extension (TKE)", dur:50, detail:"3 × 15 reps each leg", sides:"L/R", badge:"rehab",
+        focus:"VMO · Patellar tracking · Quad activation",
+        cue:"Band looped behind the knee, step slightly forward. From slightly bent, fully straighten the knee and squeeze the inner quad (VMO) hard at end range. Hold 1s. Control is everything.",
+        injury:"🔶 Right knee: VMO strength is what stabilises the kneecap. This is your #1 knee rehab move."
+      },
+      {
+        name:"Slow Step-Down (Eccentric)", dur:50, detail:"3 × 8 each leg — 4-count lower", sides:"L/R", badge:"rehab",
+        focus:"Patellar tendon · Eccentric quad strength",
+        cue:"Stand on a step on one leg. Lower the other foot toward the floor on a 4-count without touching. Step back up. This directly trains the movement that causes your stair pain.",
+        injury:"🔶 Right knee: Mild discomfort is expected and correct for tendon rehab. Pain above 4/10 = reduce range."
+      },
+      {
+        name:"Quad Stretch", dur:50, detail:"30s each side", sides:"L/R", badge:null,
+        focus:"Rectus femoris · Hip flexor",
+        cue:"Standing, pull heel to glute. Tilt pelvis slightly forward to add the hip flexor component. Hold steady.",
+        injury:"🔶 Right knee: Hold at a comfortable angle if bending fully causes pain."
+      }
+    ]
+  }
+];
+
+const CIRCUM = 2 * Math.PI * 54;
+let S = { r:0, e:0, side:0, tLeft:0, running:false, done:false, resting:false, restLeft:0, restPaused:false };
+let ticker = null;
+let audioCtx = null;
+
+const badgeHTML = {
+  flow: '<span class="badge badge-flow">FLOW</span>',
+  yt:   '<span class="badge badge-yt">YT</span>',
+  rehab:'<span class="badge badge-rehab">REHAB</span>'
+};
+
+// ── Audio ──────────────────────────────────────────────────────────────────
+function getAudio(){
+  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
+}
+function beep(freq, dur, vol=0.6, type='sine'){
+  try {
+    const ctx = getAudio();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime + dur);
+  } catch(e){}
+}
+function beepSwitch(){ beep(880, 0.35, 0.7); }           // single high beep — switch sides
+function beepCountdown(){ beep(660, 0.18, 0.5); }        // short mid beep — countdown tick
+function beepDone(){ beep(520, 0.15, 0.5); setTimeout(()=>beep(780, 0.3, 0.6), 160); } // two-tone — exercise done
+
+// ── Fullscreen ─────────────────────────────────────────────────────────────
+function enterFullscreen(){
+  const el = document.getElementById('fs-panel');
+  if(el.requestFullscreen) el.requestFullscreen();
+  else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  document.getElementById('fs-panel').style.display='flex';
+}
+function exitFullscreen(){
+  if(document.exitFullscreen) document.exitFullscreen();
+  else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+  document.getElementById('fs-panel').style.display='none';
+}
+document.addEventListener('fullscreenchange', ()=>{
+  if(!document.fullscreenElement) document.getElementById('fs-panel').style.display='none';
+});
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function fmt(s){
+  if(s>=60) return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+  return s+'s';
+}
+function cur(){ return R[S.r].exercises[S.e]; }
+
+// ── Routing ────────────────────────────────────────────────────────────────
+function setRoutine(i){
+  clearInterval(ticker); ticker=null;
+  S={r:i,e:0,side:0,tLeft:0,running:false,done:false,resting:false,restLeft:0,restDur:10,restPaused:false};
+  render();
+}
+function jumpTo(i){
+  clearInterval(ticker); ticker=null;
+  S={...S,e:i,side:0,tLeft:0,running:false,done:false,resting:false,restLeft:0,restDur:10,restPaused:false};
+  render();
+}
+
+// ── Playback ───────────────────────────────────────────────────────────────
+function togglePlay(){
+  // unlock audio on first interaction
+  try { getAudio(); } catch(e){}
+
+  if(S.resting){
+    if(S.restPaused){
+      // resume rest countdown
+      S.restPaused=false; render();
+      ticker=setInterval(restTick,1000);
+    } else {
+      // pause rest countdown
+      clearInterval(ticker); ticker=null;
+      S.restPaused=true; render();
+    }
+    return;
+  }
+  if(S.running){
+    clearInterval(ticker); ticker=null;
+    S.running=false; render(); return;
+  }
+  if(S.tLeft<=0){
+    const ex=cur();
+    S.tLeft = ex.sides==='L/R' ? Math.floor(ex.dur/2) : ex.dur;
+  }
+  S.running=true; render();
+  ticker=setInterval(tick,1000);
+}
+
+function skipRest(){
+  clearInterval(ticker); ticker=null;
+  S.resting=false; S.restLeft=0; S.restPaused=false;
+  startExercise();
+}
+
+function startExercise(){
+  const ex=cur();
+  const sideDur = ex.sides==='L/R' ? Math.floor(ex.dur/2) : ex.dur;
+  S.tLeft=sideDur; S.running=true; S.resting=false; S.restPaused=false;
+  render(); updateFS();
+  ticker=setInterval(tick,1000);
+}
+
+function restTick(){
+  S.restLeft--;
+  const n=document.getElementById('tsec');
+  const nfs=document.getElementById('fs-tsec');
+  const a=document.getElementById('arc');
+  const afs=document.getElementById('fs-arc');
+  const disp=S.restLeft+'s';
+  const off=CIRCUM*(1-S.restLeft/S.restDur);
+  if(n) n.textContent=disp;
+  if(nfs) nfs.textContent=disp;
+  if(a) a.style.strokeDashoffset=off;
+  if(afs) afs.style.strokeDashoffset=off;
+  if(S.restLeft<=0){
+    clearInterval(ticker); ticker=null;
+    S.resting=false; S.restLeft=0; S.restPaused=false;
+    startExercise();
+  }
+}
+
+function startRest(secs=10){
+  S.resting=true; S.restLeft=secs; S.restDur=secs; S.running=false; S.restPaused=false;
+  render(); updateFS();
+  ticker=setInterval(restTick,1000);
+}
+
+function tick(){
+  S.tLeft--;
+  const ex=cur();
+  // for L/R exercises, each side duration is half
+  const sideDur = ex.sides==='L/R' ? Math.floor(ex.dur/2) : ex.dur;
+  const n=document.getElementById('tsec');
+  const nfs=document.getElementById('fs-tsec');
+  const a=document.getElementById('arc');
+  const afs=document.getElementById('fs-arc');
+  const off=CIRCUM*(1-S.tLeft/sideDur);
+  if(n) n.textContent=fmt(S.tLeft);
+  if(nfs) nfs.textContent=fmt(S.tLeft);
+  if(a) a.style.strokeDashoffset=off;
+  if(afs) afs.style.strokeDashoffset=off;
+  // countdown beeps at 3,2,1
+  if(S.tLeft>0 && S.tLeft<=3) beepCountdown();
+  if(S.tLeft<=0){
+    clearInterval(ticker); ticker=null; S.running=false;
+    beepDone();
+    if(ex.sides==='L/R'&&S.side===0){
+      beepSwitch();
+      S.side=1; startRest(5); return;
+    }
+    advance();
+  }
+}
+
+function advance(){
+  const r=R[S.r]; S.side=0;
+  if(S.e<r.exercises.length-1){ S.e++; S.tLeft=0; startRest(); }
+  else{ S.done=true; exitFullscreen(); render(); }
+}
+
+function nextEx(){
+  clearInterval(ticker); ticker=null; S.running=false; S.resting=false; S.restLeft=0; S.restPaused=false;
+  if(cur().sides==='L/R'&&S.side===0){ S.side=1; S.tLeft=0; render(); return; }
+  advance();
+}
+function prevEx(){
+  clearInterval(ticker); ticker=null; S.running=false; S.resting=false; S.restLeft=0; S.restPaused=false;
+  if(S.side===1){ S.side=0; S.tLeft=0; render(); return; }
+  if(S.e>0){ S.e--; S.side=0; S.tLeft=0; S.done=false; render(); }
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function render(){
+  const r=R[S.r];
+  document.getElementById('tabs').innerHTML=R.map((rt,i)=>`
+    <div class="tab ${i===S.r?'active':''}" style="--rc:${rt.color}" onclick="setRoutine(${i})">
+      <span class="tab-icon">${rt.icon}</span>
+      <span class="tab-name">${rt.name}</span>
+      <span class="tab-meta">${rt.meta}</span>
+    </div>`).join('');
+
+  document.getElementById('exList').innerHTML=r.exercises.map((ex,i)=>`
+    <div class="ex-item ${i===S.e?'active':''} ${i<S.e?'done':''}" style="--rc:${r.color}" onclick="jumpTo(${i})">
+      <span class="ex-num">${i<S.e?'✓':(i+1)}</span>
+      <div class="ex-info">
+        <div class="ex-name">${ex.name}${ex.badge?badgeHTML[ex.badge]:''}</div>
+        <div class="ex-detail">${ex.detail}</div>
+      </div>
+      <span class="ex-dur">${ex.sides==='L/R' ? fmt(Math.floor(ex.dur/2))+' ×2' : fmt(ex.dur)}</span>
+    </div>`).join('');
+
+  const pct=S.done?100:Math.round(S.e/r.exercises.length*100);
+  const pg=document.getElementById('prog');
+  pg.style.width=pct+'%'; pg.style.background=r.color;
+  document.getElementById('prog-lbl').textContent=S.done?'Complete! 🎉':`${S.e} / ${r.exercises.length} · ${r.name}`;
+  renderTimer();
+  updateFS();
+}
+
+function timerHTML(forFS){
+  const r=R[S.r];
+  const idPfx = forFS ? 'fs-' : '';
+  if(S.done){
+    return `<div class="done-banner"><div class="big">🎉</div><h2>Routine Complete!</h2>
+      <p style="color:#889;font-size:.8rem;margin-top:8px">${r.name} done.</p>
+      <button class="btn btn-go" style="margin-top:16px" onclick="setRoutine(${S.r})">Restart</button></div>`;
+  }
+  if(S.resting){
+    const nx=R[S.r].exercises[S.e];
+    const off=CIRCUM*(1-S.restLeft/S.restDur);
+    const btnLabel = S.restPaused ? '▶ Resume' : '⏸ Pause';
+    return `
+      <div class="t-label" style="color:#6ecf8e">REST</div>
+      <div class="t-name" style="color:#6ecf8e; font-size:${forFS?'1.5rem':'1.15rem'}">Up next: ${nx.name}</div>
+      ${nx.focus?`<div class="t-focus">🎯 ${nx.focus}</div>`:''}
+      <div class="t-cue" style="color:#889">${forFS?nx.cue:'Get into position. Timer starts automatically.'}</div>
+      ${nx.injury?`<div class="t-injury">${nx.injury}</div>`:''}
+      <div class="t-circle-wrap">
+        <div class="t-circle" style="${forFS?'width:180px;height:180px':''}">
+          <svg viewBox="0 0 120 120" width="${forFS?180:128}" height="${forFS?180:128}">
+            <circle class="tc-bg" cx="60" cy="60" r="54"/>
+            <circle class="tc-fg" id="${idPfx}arc" cx="60" cy="60" r="54"
+              stroke="#6ecf8e" stroke-dasharray="${CIRCUM}" stroke-dashoffset="${off}"/>
+          </svg>
+          <div class="t-text">
+            <div class="t-secs" id="${idPfx}tsec" style="color:#6ecf8e;${forFS?'font-size:3rem':''}">${S.restLeft}s</div>
+            <div class="t-side" style="color:#6ecf8e">REST</div>
+          </div>
+        </div>
+      </div>
+      <div class="t-ctrls">
+        <button class="btn btn-back" onclick="prevEx()">← Back</button>
+        <button class="btn btn-go" style="background:#6ecf8e;color:#0f1923" onclick="togglePlay()">${btnLabel}</button>
+        <button class="btn btn-go" style="background:#4aaf6e;color:#0f1923" onclick="skipRest()">▶▶ Skip Rest</button>
+        <button class="btn btn-skip" onclick="nextEx()">Skip Ex →</button>
+        ${forFS?`<button class="btn btn-skip" onclick="exitFullscreen()">✕ Exit</button>`:''}
+      </div>`;
+  }
+  const ex=cur();
+  const sideDur = ex.sides==='L/R' ? Math.floor(ex.dur/2) : ex.dur;
+  const dur=S.tLeft>0?S.tLeft:sideDur;
+  const off=CIRCUM*(1-dur/sideDur);
+  const sideStr=ex.sides==='L/R'?(S.side===0?'LEFT SIDE':'RIGHT SIDE'):(ex.sides||'');
+  const c=r.color;
+  const countdown = S.tLeft>0 && S.tLeft<=3;
+  return `
+    <div class="t-label">Exercise ${S.e+1} of ${r.exercises.length}</div>
+    <div class="t-name" style="${forFS?'font-size:1.7rem':''};">${ex.name}${ex.badge?(' '+badgeHTML[ex.badge]):''}</div>
+    ${ex.focus?`<div class="t-focus">🎯 ${ex.focus}</div>`:''}
+    <div class="t-cue" style="${forFS?'font-size:1rem;':''};">${ex.cue}</div>
+    ${ex.injury?`<div class="t-injury">${ex.injury}</div>`:''}
+    <div class="t-circle-wrap">
+      <div class="t-circle" style="${forFS?'width:180px;height:180px':''}">
+        <svg viewBox="0 0 120 120" width="${forFS?180:128}" height="${forFS?180:128}">
+          <circle class="tc-bg" cx="60" cy="60" r="54"/>
+          <circle class="tc-fg" id="${idPfx}arc" cx="60" cy="60" r="54"
+            stroke="${countdown?'#f0a060':c}" stroke-dasharray="${CIRCUM}" stroke-dashoffset="${off}"/>
+        </svg>
+        <div class="t-text">
+          <div class="t-secs" id="${idPfx}tsec" style="${countdown?'color:#f0a060':''}${forFS?';font-size:3rem':''}">${fmt(dur)}</div>
+          ${sideStr?`<div class="t-side">${sideStr}</div>`:''}
+        </div>
+      </div>
+    </div>
+    <div class="t-ctrls">
+      <button class="btn btn-back" onclick="prevEx()">← Back</button>
+      <button class="btn btn-go" onclick="togglePlay()">${S.running?'⏸ Pause':(S.tLeft>0?'▶ Resume':'▶ Start')}</button>
+      <button class="btn btn-skip" onclick="nextEx()">Skip →</button>
+      ${forFS?`<button class="btn btn-skip" onclick="exitFullscreen()">✕ Exit</button>`:`<button class="btn btn-go" style="background:#334;color:#aab" onclick="enterFullscreen()">⛶ Full</button>`}
+    </div>`;
+}
+
+function renderTimer(){
+  document.getElementById('timerPanel').innerHTML = timerHTML(false);
+}
+function updateFS(){
+  const fs=document.getElementById('fs-inner');
+  if(fs) fs.innerHTML = timerHTML(true);
+}
+
+render();
+</script>
+</body>
+</html>
+<script>
+// ── Wake Lock — keeps screen on while routine is active ────────────────────
+let wakeLock = null;
+async function requestWakeLock() {
+  if('wakeLock' in navigator) {
+    try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+  }
+}
+async function releaseWakeLock() {
+  if(wakeLock) { try { await wakeLock.release(); } catch(e) {} wakeLock = null; }
+}
+// Re-acquire if user switches tabs and comes back mid-routine
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && (S.running || S.resting)) requestWakeLock();
+  else if(document.visibilityState === 'hidden') releaseWakeLock();
+});
+// Hook into existing functions
+const _togglePlay = togglePlay;
+togglePlay = function() {
+  _togglePlay();
+  if(S.running || S.resting) requestWakeLock(); else releaseWakeLock();
+};
+const _skipRest = skipRest;
+skipRest = function() { _skipRest(); requestWakeLock(); };
+const _setRoutine = setRoutine;
+setRoutine = function(i) { _setRoutine(i); releaseWakeLock(); };
+</script>
